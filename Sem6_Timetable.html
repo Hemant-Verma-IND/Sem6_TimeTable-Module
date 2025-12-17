@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIT Rourkela - EE Sem 6 Timetable</title>
+    <!-- Screenshot Library -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --primary: #1e293b;
+            --lunch: #facc15; 
+            --active-border: #10b981;
+            
+            /* Slot Colors */
+            --c-lab: #dcfce7;
+            --c-core: #c8e4ff;
+            --c-elec: #f3e8ff; /* Purple for Electives */
+            --c-adv: #ffedd5;
+            --c-empty: #00000028;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- 1. TOP HEADER & CLOCK --- */
+        .header-section {
+            width: 100%;
+            max-width: 1250px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .titles h1 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 1.8rem;
+        }
+
+        .titles p { margin: 5px 0 0; color: #64748b; font-weight: 500; }
+
+        .clock-box {
+            background: white;
+            padding: 5px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            text-align: right;
+        }
+        .clock-time { font-size: 2rem; font-weight: 800; color: #3b82f6; display: block; line-height: 1; }
+        .clock-date { font-size: 0.9rem; color: #94a3b8; font-weight: 600; }
+
+        /* NOTICE BANNER */
+        .notice {
+            background: #fef9c3;
+            border: 1px solid #fde047;
+            color: #854d0e;
+            padding: 10px 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 1250px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- 2. SMART DASHBOARD --- */
+        .dashboard {
+            width: 100%;
+            max-width: 1250px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dash-content { display: flex; align-items: center; gap: 20px; z-index: 2; }
+        .dash-emoji { font-size: 3rem; background: rgba(255,255,255,0.2); border-radius: 50%; width: 70px; height: 70px; display: flex; justify-content: center; align-items: center; }
+        
+        .dash-text h2 { margin: 0; font-size: 1.4rem; }
+        .dash-text p { margin: 5px 0 0; font-size: 1rem; opacity: 0.9; }
+        
+        /* SCREENSHOT BUTTON */
+        .btn-action {
+            background: white;
+            color: #2563eb;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,0.2); }
+
+        /* --- 3. TIMETABLE GRID --- */
+        #timetable-view {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            max-width: 1250px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 80px repeat(4, 1fr) 50px repeat(5, 1fr);
+            gap: 0;
+            border: 2px solid #334155;
+            min-width: 1000px;
+        }
+
+        .cell {
+            border: 1px solid #94a3b8;
+            min-height: 80px;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-cell {
+            background: #334155;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            height: 50px;
+        }
+        .sub-time { font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-top: 2px; }
+
+        .day-cell {
+            background: #fff;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1e293b;
+        }
+
+        .lunch-col {
+            grid-row: 1 / -1; 
+            grid-column: 6; 
+            background: var(--lunch);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-weight: 900;
+            letter-spacing: 5px;
+            border: 1px solid #94a3b8;
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* CELL TYPES */
+        .type-lab { background: var(--c-lab); }
+        .type-core { background: var(--c-core); }
+        .type-elec { background: var(--c-elec); }
+        .type-adv { background: var(--c-adv); border: 2px solid #fb923c; } 
+        .type-empty { background: var(--c-empty); color: #cbd5e1; }
+
+        .cell-code { font-weight: 800; font-size: 0.95rem; margin-bottom: 2px; }
+        .cell-room { color: #b91c1c; font-style: italic; font-weight: 700; font-size: 0.75rem; }
+
+        /* LIVE ACTIVE ANIMATION */
+        .active-glow {
+            animation: pulse-border 1.5s infinite;
+            z-index: 10;
+            background: #fff !important;
+            border: 3px solid var(--active-border) !important;
+            color: #000 !important;
+        }
+        .live-tag {
+            position: absolute;
+            top: -10px; right: -10px;
+            background: #10b981; color: white;
+            font-size: 0.7rem; padding: 2px 6px;
+            border-radius: 12px; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* --- 4. CRAZY FOOTER (For Hemant) --- */
+        .crazy-footer {
+            margin-top: 30px;
+            text-align: center;
+            padding: 15px 30px;
+            border-radius: 50px;
+            background: #ffffff;
+            border: 2px dashed #3b82f6;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* .crazy-footer:hover {
+            transform: scale(1.02) rotate(-1deg);
+            border-color: #ef4444;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        } */
+
+        .footer-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #6366f1, #ec4899, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        
+        .cr-badge {
+            background: #1e293b;
+            color: white;
+            -webkit-text-fill-color: white;
+                        cursor: pointer;
+
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+            vertical-align: middle;
+            animation: bounce 3s infinite;
+            display: inline-block;
+        }
+
+        @keyframes bounce { 
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 
+            40% {transform: translateY(-5px);} 
+            60% {transform: translateY(-3px);} 
+        }
+
+        @media (max-width: 1100px) {
+            #timetable-view { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SECTION 1: HEADER & INFO -->
+    <header class="header-section">
+        <div class="titles">
+            <h1>NIT ROURKELA <span style="font-size:0.9rem; background:#ef4444; color:white; padding:2px 8px; border-radius:4px; vertical-align:middle;">Tentative</span></h1>
+            <p>Electrical Engineering • Semester 6 (Updated Course List)</p>
+        </div>
+        <div class="clock-box">
+            <span class="clock-time" id="clock-display">00:00:00</span>
+            <span class="clock-date" id="date-display">...</span>
+        </div>
+    </header>
+
+    <div class="notice">
+        📅 <strong>Note:</strong> Classes explicitly and tentatively start from <strong>Jan 2nd</strong>
+    </div>
+
+    <!-- SECTION 2: SMART STATUS DASHBOARD -->
+    <div class="dashboard">
+        <div class="dash-content">
+            <div class="dash-emoji" id="dash-emoji">⏳</div>
+            <div class="dash-text">
+                <h2 id="dash-title">Initializing...</h2>
+                <p id="dash-desc">Checking your personalized schedule...</p>
+            </div>
+        </div>
+        <button class="btn-action" onclick="takeScreenshot()">
+            📸 Screenshot
+        </button>
+    </div>
+
+    <!-- SECTION 3: THE TIMETABLE -->
+    <div id="timetable-view">
+        <div class="grid-container" id="grid">
+            
+            <!-- ROW 1: HEADERS -->
+            <div class="cell header-cell">Day</div>
+            <div class="cell header-cell">08:00<div class="sub-time">08:55</div></div>
+            <div class="cell header-cell">09:00<div class="sub-time">09:55</div></div>
+            <div class="cell header-cell">10:00<div class="sub-time">10:55</div></div>
+            <div class="cell header-cell">11:05<div class="sub-time">12:00</div></div>
+            
+            <div class="lunch-col">LUNCH</div>
+            
+            <div class="cell header-cell">13:15<div class="sub-time">14:10</div></div>
+            <div class="cell header-cell">14:15<div class="sub-time">15:10</div></div>
+            <div class="cell header-cell">15:15<div class="sub-time">16:10</div></div>
+            <div class="cell header-cell">16:20<div class="sub-time">17:15</div></div>
+            <div class="cell header-cell">17:20<div class="sub-time">18:15</div></div>
+
+            <!-- Content generated by JS -->
+        </div>
+
+        <!-- CRAZY FOOTER -->
+        <div class="crazy-footer">
+            <div class="footer-text">
+                Prepared with ❤️ by Hemant Verma  <span class="cr-badge" 
+                onclick="window.location.href='https://www.linkedin.com/in/hemant-verma-ind/'"
+                >ƪ(˘⌣˘)ʃ</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================= USER DATA SECTION (EDIT HERE IF NEEDED) ================= */
+        
+        // Mapping of Code to Details based on Image 2
+        const courses = {
+            "EE3408": { name: "Embedded Systems", type: "core", room: "TBD" },         // Slot TJ
+            "EE3206": { name: "Indus. Machine Drives", type: "elec", room: "TBD" },   // Slot TM
+            "EE3410": { name: "Digital Communication", type: "elec", room: "TBD" },   // Slot TK
+            "EE3002": { name: "Adv. Machine Learning", type: "adv", room: "TBD" },     // Slot TE (Multi Elec)
+            "EE3174": { name: "Power Sys Lab", type: "lab", room: "TBD" },        // Slot PY
+            "EE3272": { name: "Machine Drives Lab", type: "lab", room: "TBD" },  // Slot PE
+            "EE3472": { name: "Embedded Sys Lab", type: "lab", room: "TBD" },     // Slot PX
+            "EE3670": { name: "Prod. Dev Lab", type: "lab", room: "TBD" }        // Slot PS
+        };
+
+        // SCHEDULE LOGIC
+        // Day: 1=Mon, 2=Tue... | Period: 1=08:00 start ... 9=17:20 start
+        // dur: duration of block (1, 2, or 3 hours)
+        
+        const schedule = [
+            // --- MONDAY (Day 1) ---
+            // PE (Lab) starts Mon Morning
+            { d: 1, p: 1, dur: 3, c: "EE3272" }, 
+            // TE (Adv ML) -> Mon P4
+            { d: 1, p: 4, dur: 1, c: "EE3002" },
+            // TJ (Embedded) -> Mon P5 (13:15)
+            { d: 1, p: 5, dur: 1, c: "EE3408" },
+            // TK (Dig Comm) -> Mon P6
+            { d: 1, p: 6, dur: 1, c: "EE3410" },
+
+            // --- TUESDAY (Day 2) ---
+            // TE (Adv ML) -> Tue P4
+            { d: 2, p: 4, dur: 1, c: "EE3002" },
+            // TK (Dig Comm) -> Tue P5
+            { d: 2, p: 5, dur: 1, c: "EE3410" },
+            // TM (Indus Drives) -> Tue P7
+            { d: 2, p: 7, dur: 1, c: "EE3206" },
+
+            // --- WEDNESDAY (Day 3) ---
+            // PX (Emb Lab) -> Wed Morning (Assumed P2 start based on usual 3hr)
+            { d: 3, p: 2, dur: 3, c: "EE3472" },
+            // PY (Power Lab) -> Wed Afternoon (starts P6)
+            { d: 3, p: 6, dur: 3, c: "EE3174" },
+
+            // --- THURSDAY (Day 4) ---
+            // TM (Indus Drives) -> Thu P6
+            { d: 4, p: 6, dur: 1, c: "EE3206" },
+            // TJ (Embedded) -> Thu P7
+            { d: 4, p: 7, dur: 1, c: "EE3408" },
+
+            // --- FRIDAY (Day 5) ---
+            // PS (Prod Lab) -> Fri Morning (Usually 2 Credits 0-0-2)
+            { d: 5, p: 2, dur: 2, c: "EE3670" },
+            // TE (Adv ML) -> Fri P4
+            { d: 5, p: 4, dur: 1, c: "EE3002" },
+            // TM (Indus Drives) -> Fri P5
+            { d: 5, p: 5, dur: 1, c: "EE3206" },
+            // TJ (Embedded) -> Fri P6
+            { d: 5, p: 6, dur: 1, c: "EE3408" },
+            // TK (Dig Comm) -> Fri P7
+            { d: 5, p: 7, dur: 1, c: "EE3410" }
+        ];
+
+        /* ================= END USER DATA ================= */
+
+        // Maps period index to Minutes (from midnight)
+        // 08:00 = 480 mins
+        const timeMap = [
+            { id: 1, start: 480, end: 535 },  // 08:00-08:55
+            { id: 2, start: 540, end: 595 },  // 09:00-09:55
+            { id: 3, start: 600, end: 655 },  // 10:00-10:55
+            { id: 4, start: 665, end: 720 },  // 11:05-12:00
+            // Lunch Gap
+            { id: 5, start: 795, end: 850 },  // 13:15
+            { id: 6, start: 855, end: 910 },
+            { id: 7, start: 915, end: 970 },
+            { id: 8, start: 980, end: 1035 },
+            { id: 9, start: 1040, end: 1095 }
+        ];
+
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+
+        function init() {
+            renderGrid();
+            setInterval(updateClockAndStatus, 1000);
+            updateClockAndStatus(); 
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById("grid");
+
+            for(let d=1; d<=5; d++) {
+                let dayEl = document.createElement("div");
+                dayEl.className = "cell day-cell";
+                dayEl.textContent = days[d-1].toUpperCase();
+                dayEl.style.gridRow = d+1;
+                dayEl.style.gridColumn = 1;
+                grid.appendChild(dayEl);
+
+                let occupiedUntil = 0; 
+
+                for(let p=1; p<=9; p++) {
+                    let colStart = (p <= 4) ? p + 1 : p + 2;
+
+                    if (p < occupiedUntil) continue;
+
+                    let slot = schedule.find(s => s.d === d && s.p === p);
+                    let cell = document.createElement("div");
+                    
+                    cell.style.gridRow = d + 1;
+                    cell.style.gridColumnStart = colStart;
+
+                    if (slot) {
+                        const info = courses[slot.c];
+                        cell.className = `cell type-${info.type}`;
+                        cell.style.gridColumnEnd = `span ${slot.dur}`;
+                        cell.id = `slot-${d}-${p}`; 
+                        cell.innerHTML = `
+                            <div class="cell-code">${slot.c}</div>
+                            <div style="font-size:0.75rem; line-height:1.1; margin-bottom:2px;">${info.name}</div>
+                            <div class="cell-room">${info.room}</div>
+                        `;
+                        occupiedUntil = p + slot.dur;
+                    } else {
+                        cell.className = "cell type-empty";
+                        cell.textContent = "-";
+                        occupiedUntil = p + 1;
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function updateClockAndStatus() {
+            const now = new Date();
+            document.getElementById("clock-display").textContent = now.toLocaleTimeString('en-US', {hour12: false});
+            document.getElementById("date-display").textContent = now.toLocaleDateString('en-GB', {weekday: 'long', day:'numeric', month:'short'});
+
+            const day = now.getDay();
+            const currMin = now.getHours() * 60 + now.getMinutes();
+            
+            document.querySelectorAll(".active-glow").forEach(e => e.classList.remove("active-glow"));
+            document.querySelectorAll(".live-tag").forEach(e => e.remove());
+
+            if (day === 0 || day === 6) {
+                setDashboard("😎", "Weekend Vibes", "Hemant says: Take a break!");
+                return;
+            }
+
+            let active = null;
+            let todaySlots = schedule.filter(s => s.d === day);
+            
+            todaySlots.forEach(slot => {
+                let timeData = timeMap.find(m => m.id === slot.p);
+                // Approximate End Time
+                let endMin = timeData.start + (slot.dur * 55); 
+                
+                if (currMin >= timeData.start && currMin < endMin) {
+                    active = slot;
+                }
+            });
+
+            if (active) {
+                let el = document.getElementById(`slot-${active.d}-${active.p}`);
+                if(el) {
+                    el.classList.add("active-glow");
+                    el.innerHTML += `<div class="live-tag">LIVE</div>`;
+                }
+                setDashboard("🔴", `Ongoing: ${courses[active.c].name}`, `Happening now. Code: ${active.c}`);
+            } else if (currMin >= 720 && currMin < 795) {
+                setDashboard("🍔", "Lunch Time", "Refuel for the afternoon.");
+            } else {
+                let next = todaySlots
+                    .map(s => ({...s, time: timeMap.find(m => m.id === s.p).start }))
+                    .filter(s => s.time > currMin)
+                    .sort((a,b) => a.time - b.time)[0];
+                
+                if (next) {
+                    let diff = next.time - currMin;
+                    let hrs = Math.floor(diff / 60);
+                    let mins = diff % 60;
+                    let timeString = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
+                    // setDashboard("⏳", "Free Slot", `Next: <strong>${courses[next.c].name}</strong> in ${timeString}`);
+                    setDashboard("🧣", "Enjoy your Winter Vacation", "No classes today.");
+                } else {
+                    if (currMin > 1100) setDashboard("😴", "Day Completed", "No more classes today.");
+                    else if (currMin < 480) setDashboard("🌅", "Early Morning", "Classes start at 08:00.");
+                    else setDashboard("☕", "Free Slot", "Relax or study.");
+                }
+            }
+        }
+
+        function setDashboard(emoji, title, desc) {
+            document.getElementById("dash-emoji").textContent = emoji;
+            document.getElementById("dash-title").textContent = title;
+            document.getElementById("dash-desc").innerHTML = desc;
+        }
+
+        function takeScreenshot() {
+            window.scrollTo(0,0);
+            html2canvas(document.getElementById('timetable-view'), { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'EE_Sem6_Timetable.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
