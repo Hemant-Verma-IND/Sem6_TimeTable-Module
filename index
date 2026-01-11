@@ -334,14 +334,14 @@
         
         // Mapping of Code to Details based on Image 2
         const courses = {
-            "EE3408": { name: "Embedded Systems", type: "core", room: "TBD" },         // Slot TJ
-            "EE3206": { name: "Indus. Machine Drives", type: "elec", room: "TBD" },   // Slot TM
-            "EE3410": { name: "Digital Communication", type: "elec", room: "TBD" },   // Slot TK
-            "EE3002": { name: "Adv. Machine Learning", type: "adv", room: "TBD" },     // Slot TE (Multi Elec)
-            "EE3174": { name: "Power Sys Lab", type: "lab", room: "TBD" },        // Slot PY
-            "EE3272": { name: "Machine Drives Lab", type: "lab", room: "TBD" },  // Slot PE
-            "EE3472": { name: "Embedded Sys Lab", type: "lab", room: "TBD" },     // Slot PX
-            "EE3670": { name: "Prod. Dev Lab", type: "lab", room: "TBD" }        // Slot PS
+            "EE3408": { name: "Embedded Systems", type: "core", room: "EE213" },         // Slot TJ
+            "EE3206": { name: "Indus. Machine Drives", type: "elec", room: "EE213" },   // Slot TM
+            "EE3410": { name: "Digital Communication", type: "elec", room: "EE105" },   // Slot TK
+            "EE3002": { name: "Adv. Machine Learning", type: "adv", room: "EE302" },     // Slot TE (Multi Elec)
+            "EE3174": { name: "Power Sys Lab", type: "lab", room: "EE308" },        // Slot PY
+            "EE3272": { name: "Machine Drives Lab", type: "lab", room: "EE109/EE116" },  // Slot PE
+            "EE3472": { name: "Embedded Sys Lab", type: "lab", room: "EE306" },     // Slot PX
+            "EE3670": { name: "Prod. Dev Lab", type: "lab", room: "UA" }        // Slot PS
         };
 
         // SCHEDULE LOGIC
@@ -511,8 +511,7 @@
                     let hrs = Math.floor(diff / 60);
                     let mins = diff % 60;
                     let timeString = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
-                    // setDashboard("⏳", "Free Slot", `Next: <strong>${courses[next.c].name}</strong> in ${timeString}`);
-                    setDashboard("🧣", "Enjoy your Winter Vacation", "No classes today.");
+                    setDashboard("⏳", "Free Slot", `Next: <strong>${courses[next.c].name}</strong> in ${timeString}`);
                 } else {
                     if (currMin > 1100) setDashboard("😴", "Day Completed", "No more classes today.");
                     else if (currMin < 480) setDashboard("🌅", "Early Morning", "Classes start at 08:00.");
